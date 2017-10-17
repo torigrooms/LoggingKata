@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using log4net;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace LoggingKata
 {
@@ -16,14 +17,10 @@ namespace LoggingKata
 
         static void Main(string[] args)
         {
-            if (args.Length == 0)
-            {
-                Console.WriteLine("You must provide a filename as an argument");
-                Logger.Fatal("Cannot import without filename specified as an argument");
-                return;
-            }
-
+         
             Logger.Info("Log initialized");
+            var csvPath = Environment.CurrentDirectory + "\\Taco_Bell-US-AL-Alabama.csv";
+            Logger.Debug("Created csvPath variable:" + csvPath);
             var lines = File.ReadAllLines(args[0]);
             var parser = new TacoParser();
             var locations = lines.Select(line => parser.Parse(line));
