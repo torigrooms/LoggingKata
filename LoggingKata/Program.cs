@@ -25,20 +25,24 @@ namespace LoggingKata
 
 			var rows = File.ReadAllLines(csvPath);
 
-			if (rows.Length == 0)
+			switch (rows.Length)
 			{
-				Logger.Error("Our csv file is missing or empty of content");
-			}
-			else if (rows.Length == 1)
-			{
-				Logger.Warn("Can't compare. There is only one element");
+				case 1:
+					Logger.Error("Our csv file is missing or empty of content");
+					break;
+				case 2:
+					Logger.Warn("Can't compare. There is only one element");
+					break;
 			}
 
 			var parser = new TacoParser();
 
 			Logger.Debug("Initialized our Parser");
 
-			var locations = rows.Select(row => parser.Parse(row));
+			var locations = rows.Select(row => parser.Parse(row))
+				.OrderBy(loc => loc.Location.Longitude)
+				.ThenBy(loc => loc.Location.Latitude)
+				.ToArray();
 
 			ITrackable a = null;
 
@@ -49,35 +53,31 @@ namespace LoggingKata
 			//TODO:  Find the two TacoBells in Alabama that are the furthurest from one another.
 			foreach (var locA in locations)
 			{
-				Logger.Debug("Checking origins");
-				var origin = new Coordinate
-				{
-					Latitude = locA.Location.Latitude,
-					Longitude = locA.Location.Longitude
-				};
+				var origin = new Coordinate {Latitude = locA.Location.Latitude, Longitude = locA.Location.Longitude };
 				foreach (var locB in locations)
 				{
-					Logger.Debug("Checking origin against destinations");
-					var destination = new Coordinate
-					{
-						Latitude = locB.Location.Latitude,
-						Longitude = locB.Location.Longitude
-					};
-					Logger.Debug("Getting miles");
+					var destination = new Coordinate {Latitude = locB.Location.Latitude, Longitude = locB.Location.Longitude};
 					var nDist = GeoCalculator.GetDistance(origin, destination);
 
-					if (nDist > distance)
-					{
-						Logger.Info("Found two furthest locations");
-						a = locA;
-						b = locB;
-						distance = nDist;
-					}
+					if (!(nDist > distance)) {continue;}
+					Logger.Info("Found two furthest locations");
+					a = locA;
+					b = locB;
+					distance = nDist;
 				}
 
 			}
-			Console.WriteLine($"The two Taco Bells that are furthest apart are: {a.Name} and: {b.Name}");
-			Console.WriteLine($"These two locations are {distance} miles apart");
+			if (a == null || b == null)
+			{
+				Logger.Error("Failed to find two furthest locations");
+				Console.WriteLine("Couldn't find the two furthest locations");
+				Console.ReadLine();
+				return;
+			}
+			var logMessage =
+				$"The two Taco Bells that are furthest apart are: {a.Name} and: {b.Name}. These two locations are {distance} miles apart.";
+			Logger.Info(logMessage);
+			Console.WriteLine(logMessage);
 			Console.ReadLine();
 
 		}
